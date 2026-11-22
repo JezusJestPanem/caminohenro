@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#08090C">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="A pilgrimage on foot from Portugal to Japan, and the essays written along the way.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Camino Henro">
+<meta property="og:title" content="Camino Henro">
+<meta property="og:description" content="From the End of the Earth to the Land of the Rising Sun. A pilgrimage on foot from Portugal to Japan.">
+<meta property="og:url" content="https://caminohenro.com/">
+<meta property="og:image" content="https://caminohenro.com/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<title>Camino Henro prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Shippori+Mincho:wght@400;500;600;700&amp;family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&amp;display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one paper scroll per page, hung from a dowel over a fixed dusk road.
+   Everything is inked in a single column; when the scroll ends, the road is there. */
+:root {
+  --bg-outer-obsidian: #08090C;
+  --bg-header: rgba(10, 12, 16, 0.88);
+  --bg-washi-scroll: #E6DFCF;
+  --ink-sumi: #1C1A17;
+  --ink-muted: #5A534A;
+  --accent-indigo: #0A367E;
+  --accent-crimson: #6E2B25;
+  --border-ink: rgba(28, 26, 23, 0.15);
+  --header-text: #E6DFCF;
+  --header-muted: #A09A8E;
+  --on-photo: #F4F1EA;
+  --font-display: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif;
+  --font-body: 'Spectral', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --header-h: 56px;
+  --reveal: 0;
+  color-scheme: light;
+}
+@media (min-width: 1080px) { :root { --header-h: 64px; } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html.menu-open { overflow: hidden; }
+body {
+  margin: 0;
+  background: var(--bg-outer-obsidian);
+  color: var(--ink-sumi);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  overflow-x: clip;
+}
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+button { font: inherit; }
+[lang="ja"] { font-family: var(--font-display); }
+::selection { background: rgba(110, 43, 37, 0.22); }
+:focus-visible { outline: 2px solid var(--accent-indigo); outline-offset: 3px; }
+.site-header :focus-visible, .menu :focus-visible, .reveal :focus-visible { outline-color: var(--header-text); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- Layer 1: the fixed road ---------- */
+.backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100lvh; z-index: 0; overflow: hidden; background: var(--bg-outer-obsidian); }
+.backdrop__photo, .backdrop__ambient, .backdrop__dusk { position: absolute; inset: 0; }
+.backdrop__photo {
+  background: url("assets/road-apple.jpg") center 84% / cover no-repeat;
+  transform: scale(calc(1.05 - 0.05 * var(--reveal)));
+  transform-origin: 50% 80%;
+}
+.backdrop__ambient, .backdrop__print { display: none; }
+.backdrop__dusk {
+  background: radial-gradient(circle at 50% 72%,
+    rgba(8, 9, 12, calc(0.58 - 0.54 * var(--reveal))) 0%,
+    rgba(8, 9, 12, calc(0.86 - 0.52 * var(--reveal))) 100%);
+}
+/* A portrait photo on a wide screen hangs as a print instead of being stretched */
+@media (min-aspect-ratio: 5/4) and (min-width: 900px) {
+  .backdrop[data-fit="hang"] .backdrop__ambient { display: block; background-position: center; background-size: cover; transform: scale(1.2); }
+  .backdrop[data-fit="hang"] .backdrop__print {
+    display: block; position: absolute; left: 50%;
+    top: calc(var(--header-h) + 3.5vh); bottom: 3.5vh;
+    aspect-ratio: 9 / 20; transform: translateX(-50%);
+    background-position: center; background-size: cover;
+    box-shadow: 0 0 0 7px var(--bg-washi-scroll), 0 28px 80px rgba(0, 0, 0, 0.7);
+  }
+  .backdrop[data-fit="hang"] .backdrop__dusk {
+    background: radial-gradient(circle at 50% 60%,
+      rgba(8, 9, 12, calc(0.5 - 0.5 * var(--reveal))) 0%,
+      rgba(8, 9, 12, calc(0.74 - 0.2 * var(--reveal))) 75%);
+  }
+}
+
+/* ---------- Header ---------- */
+.site-header {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 10px;
+  height: var(--header-h); padding: 0 8px 0 14px;
+  background: var(--bg-header);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(230, 223, 207, 0.16);
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; margin-right: auto; color: var(--header-text); text-decoration: none; }
+.brand__seal { flex: none; width: 38px; height: 38px; padding: 2px; border-radius: 50%; background: var(--bg-washi-scroll); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); }
+.brand__seal img { width: 100%; height: 100%; }
+.brand__text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.brand__jp { font-size: 0.62rem; letter-spacing: 0.3em; color: var(--header-muted); }
+.brand__en { font-family: var(--font-display); font-size: 0.86rem; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; }
+.nav { display: none; }
+.nav a { padding: 8px 11px; border-bottom: 1px solid transparent; font-family: var(--font-display); font-size: 0.95rem; color: var(--header-muted); text-decoration: none; }
+.nav a:hover { color: var(--header-text); }
+.nav a[aria-current="page"] { color: var(--header-text); border-bottom-color: var(--header-text); }
+.nav__later { display: flex; align-items: center; margin-left: 6px; padding-left: 8px; border-left: 1px solid rgba(230, 223, 207, 0.2); }
+.nav__later a { font-size: 0.86rem; opacity: 0.75; }
+.nav__later a[aria-current="page"] { opacity: 1; }
+.nav__later em { margin-left: 4px; font: normal 0.62rem/1 var(--font-display); letter-spacing: 0.2em; color: var(--header-muted); opacity: 0.8; }
+.donate {
+  flex: none; padding: 7px 10px; border-radius: 2px;
+  background: var(--accent-crimson); color: var(--on-photo);
+  font-family: var(--font-display); font-weight: 600; font-size: 0.86rem; letter-spacing: 0.04em; text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.donate:hover { filter: brightness(1.14); }
+.menu-btn { flex: none; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: none; color: var(--header-text); cursor: pointer; }
+.menu-btn__lines { position: relative; width: 22px; height: 14px; }
+.menu-btn__lines i { position: absolute; left: 0; right: 0; height: 1.5px; background: currentColor; transition: transform 0.2s ease, opacity 0.2s ease; }
+.menu-btn__lines i:nth-child(1) { top: 0; }
+.menu-btn__lines i:nth-child(2) { top: 6px; }
+.menu-btn__lines i:nth-child(3) { top: 12px; }
+.menu-btn[aria-expanded="true"] .menu-btn__lines i:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.menu-btn[aria-expanded="true"] .menu-btn__lines i:nth-child(2) { opacity: 0; }
+.menu-btn[aria-expanded="true"] .menu-btn__lines i:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+@media (max-width: 359px) { .brand__jp { display: none; } .brand__en { font-size: 0.8rem; letter-spacing: 0.08em; } }
+@media (min-width: 1080px) {
+  .site-header { padding: 0 28px; gap: 14px; }
+  .brand__seal { width: 44px; height: 44px; }
+  .brand__en { font-size: 1.1rem; letter-spacing: 0.16em; }
+  .donate { padding: 8px 14px; font-size: 0.92rem; }
+  .nav { display: flex; align-items: center; gap: 2px; }
+  .menu-btn { display: none; }
+}
+
+/* ---------- Menu (phone and tablet) ---------- */
+.menu { position: fixed; inset: var(--header-h) 0 0 0; z-index: 90; overflow-y: auto; padding: 18px 22px 44px; background: #0A0C10; color: var(--header-text); }
+.menu[hidden] { display: none; }
+.menu ul { margin: 0; padding: 0; list-style: none; }
+.menu a { display: grid; grid-template-columns: 4.4rem 1fr; align-items: baseline; padding: 13px 0; border-bottom: 1px solid rgba(230, 223, 207, 0.12); font-family: var(--font-display); font-size: 1.45rem; text-decoration: none; }
+.menu a span { font-size: 0.82rem; letter-spacing: 0.2em; color: var(--header-muted); }
+.menu a[aria-current="page"] span { color: var(--header-text); }
+.menu__later-h { margin: 30px 0 2px; font-size: 0.9rem; font-style: italic; color: var(--header-muted); }
+.menu__later a { font-size: 1.12rem; color: var(--header-muted); }
+@media (min-width: 1080px) { .menu { display: none; } }
+
+/* ---------- Layer 2: the scroll ---------- */
+.stage { position: relative; z-index: 10; padding-top: 22px; }
+.dowel {
+  position: relative; z-index: 2; width: min(96vw, 780px); margin: 0 auto; border-radius: 999px;
+  background: linear-gradient(180deg, #5C3B22 0%, #3A2415 40%, #1F130B 74%, #120A05 100%);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.75);
+}
+.dowel--top { height: 12px; }
+.dowel--bottom { height: 22px; }
+.dowel::before, .dowel::after { content: ""; position: absolute; top: -2px; bottom: -2px; width: 15px; border-radius: 4px; background: linear-gradient(180deg, #C9A566 0%, #8A6A36 55%, #4E3A1B 100%); }
+.dowel::before { left: -4px; }
+.dowel::after { right: -4px; }
+.washi {
+  --pad: clamp(22px, 7vw, 92px);
+  position: relative; width: min(92vw, 740px); min-height: 96vh; margin: 0 auto;
+  padding: 54px var(--pad) 46px;
+  background-color: var(--bg-washi-scroll);
+  background-image:
+    linear-gradient(180deg, rgba(28, 26, 23, 0.2), rgba(28, 26, 23, 0)),
+    linear-gradient(0deg, rgba(28, 26, 23, 0.16), rgba(28, 26, 23, 0)),
+    linear-gradient(90deg, rgba(150, 134, 104, 0.3) 0, rgba(150, 134, 104, 0) 5%, rgba(150, 134, 104, 0) 95%, rgba(150, 134, 104, 0.3) 100%),
+    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1NjAiIGhlaWdodD0iNzIwIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxwYXRoIGQ9Ik0yMzAuOCAxNjEuM1EyMDguNyAxMzYuNSAxODQuMCAxMTQuMiIgc3Ryb2tlPSIjNkY2MDQ4IiBzdHJva2Utb3BhY2l0eT0iMC4xMyIgc3Ryb2tlLXdpZHRoPSIwLjcxIi8+PHBhdGggZD0iTTEwNS4wIDY3NC43UTExNy4xIDY3OC41IDExOC40IDY5MS4wIiBzdHJva2U9IiNGQkY3RUMiIHN0cm9rZS1vcGFjaXR5PSIwLjM1IiBzdHJva2Utd2lkdGg9IjAuNDYiLz48cGF0aCBkPSJNMTE4LjYgMzM3LjJRMTM4LjggMzczLjAgMTc4LjEgMzYwLjkiIHN0cm9rZT0iI0ZCRjdFQyIgc3Ryb2tlLW9wYWNpdHk9IjAuMzkiIHN0cm9rZS13aWR0aD0iMC41MCIvPjxwYXRoIGQ9Ik00ODEuNSA2NzIuMlE0ODUuOSA2MjQuOCA0MzkuMiA2MTUuNyIgc3Ryb2tlPSIjNkY2MDQ4IiBzdHJva2Utb3BhY2l0eT0iMC4wNyIgc3Ryb2tlLXdpZHRoPSIwLjYyIi8+PHBhdGggZD0iTTIyMS40IDI4Ni40UTIwMC4yIDI5Mi43IDE3OC40IDI4OC45IiBzdHJva2U9IiNGQkY3RUMiIHN0cm9rZS1vcGFjaXR5PSIwLjI5IiBzdHJva2Utd2lkdGg9IjAuNTQiLz48cGF0aCBkPSJNNDQ5LjIgNTMuMlE0MzYuMCA1OC4xIDQyOC43IDQ2LjAiIHN0cm9rZT0iI0ZCRjdFQyIgc3Ryb2tlLW9wYWNpdHk9IjAuMzYiIHN0cm9rZS13aWR0aD0iMC44NCIvPjxwYXRoIGQ9Ik0yMTUuNCA1NS44UTIwOC4wIDc2LjEgMTg5LjYgODcuNSIgc3Ryb2tlPSIjRkJGN0VDIiBzdHJva2Utb3BhY2l0eT0iMC4yOSIgc3Ryb2tlLXdpZHRoPSIwLjU2Ii8+PHBhdGggZD0iTTM2OS44IDM3Mi40UTM1OC43IDM5My4yIDM0NS43IDQxMi45IiBzdHJva2U9IiNGQkY3RUMiIHN0cm9rZS1vcGFjaXR5PSIwLjQxIiBzdHJva2Utd2lkdGg9IjAuNzYiLz48cGF0aCBkPSJNNDg0LjggNTY2LjFRNDg1LjEgNTc1LjEgNDc3LjggNTgwLjUiIHN0cm9rZT0iI0ZCRjdFQyIgc3Ryb2tlLW9wYWNpdHk9IjAuMzciIHN0cm9rZS13aWR0aD0iMC43MiIvPjxwYXRoIGQ9Ik03OC44IDczLjhROTQuMSA3OC44IDExMC4yIDgwLjEiIHN0cm9rZT0iI0ZCRjdFQyIgc3Ryb2tlLW9wYWNpdHk9IjAuNDIiIHN0cm9rZS13aWR0aD0iMC43MCIvPjxwYXRoIGQ9Ik0zOTguOSAzMTkuMlE0MTYuMSAzMzEuNyA0MjYuMSAzNTAuNSIgc3Ryb2tlPSIjNkY2MDQ4IiBzdHJva2Utb3BhY2l0eT0iMC4xNCIgc3Ryb2tlLXdpZHRoPSIwLjczIi8+PHBhdGggZD0iTTM2NS45IDEyNi43UTM4NS4yIDkzLjMgNDIyLjEgODIuNCIgc3Ryb2tlPSIjRkJGN0VDIiBzdHJva2Utb3BhY2l0eT0iMC4yNiIgc3Ryb2tlLXdpZHRoPSIwLjgwIi8+PHBhdGggZD0iTTE3NS4wIDYwMy4xUTE3Mi4yIDY0MC40IDE5OS44IDY2NS41IiBzdHJva2U9IiNGQkY3RUMiIHN0cm9rZS1vcGFjaXR5PSIwLjI3IiBzdHJva2Utd2lkdGg9IjAuNDkiLz48cGF0aCBkPSJNMjI3LjQgNDI3LjNRMjE0LjkgNDI3LjUgMjAzLjMgNDIyLjgiIHN0cm9rZT0iIzZGNjA0OCIgc3Ryb2tlLW9wYWNpdHk9IjAuMTIiIHN0cm9rZS13aWR0aD0iMC41MSIvPjxwYXRoIGQ9Ik00NTYuMCA2Mi41UTQ0Mi45IDk2LjAgNDExLjIgMTEyLjgiIHN0cm9rZT0iIzZGNjA0OCIgc3Ryb2tlLW9wYWNpdHk9IjAuMTAiIHN0cm9rZS13aWR0aD0iMC42MCIvPjxwYXRoIGQ9Ik0zNzAuNCAyOTcuM1EzNjAuNyAzMjcuMCAzMzkuOSAzNTAuMSIgc3Ryb2tlPSIjRkJGN0VDIiBzdHJva2Utb3BhY2l0eT0iMC4yOCIgc3Ryb2tlLXdpZHRoPSIwLjQ4Ii8+PHBhdGggZD0iTTE4NC44IDI0Ny43UTIwMC42IDIxMC45IDE3OC4zIDE3Ny42IiBzdHJva2U9IiM2RjYwNDgiIHN0cm9rZS1vcGFjaXR5PSIwLjA4IiBzdHJva2Utd2lkdGg9IjAuNzciLz48cGF0aCBkPSJNMTAxLjMgMTU4LjZROTkuNSAxNDkuMCA5OS43IDEzOS4yIiBzdHJva2U9IiNGQkY3RUMiIHN0cm9rZS1vcGFjaXR5PSIwLjI1IiBzdHJva2Utd2lkdGg9IjAuODUiLz48cGF0aCBkPSJNMjU3LjAgMTI0LjlRMjUwLjIgMTUzLjYgMjcxLjUgMTc0LjEiIHN0cm9rZT0iI0ZCRjdFQyIgc3Ryb2tlLW9wYWNpdHk9IjAuMjciIHN0cm9rZS13aWR0aD0iMC43MyIvPjxwYXRoIGQ9Ik0zNjUuOCAzNzUuN1EzNjMuMiAzODguOCAzNzUuNiAzOTMuOCIgc3Ryb2tlPSIjRkJGN0VDIiBzdHJva2Utb3BhY2l0eT0iMC4zMiIgc3Ryb2tlLXdpZHRoPSIwLjcxIi8+PHBhdGggZD0iTTE2MS4wIDIzMy4wUTE3NC43IDIwMi43IDIwMC4xIDE4MS4zIiBzdHJva2U9IiNGQkY3RUMiIHN0cm9rZS1vcGFjaXR5PSIwLjIwIiBzdHJva2Utd2lkdGg9IjAuNjQiLz48cGF0aCBkPSJNNDExLjMgNjc1LjdRNDEyLjAgNjUzLjcgMzkyLjEgNjQ0LjIiIHN0cm9rZT0iIzZGNjA0OCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDkiIHN0cm9rZS13aWR0aD0iMC40OSIvPjxwYXRoIGQ9Ik00MTkuMSAzMDcuMVE0MTIuNSAyNzkuMCA0MTIuNyAyNTAuMiIgc3Ryb2tlPSIjRkJGN0VDIiBzdHJva2Utb3BhY2l0eT0iMC4yNSIgc3Ryb2tlLXdpZHRoPSIwLjU5Ii8+PHBhdGggZD0iTTQwMy42IDU2NS42UTM5MS40IDU3Ni42IDM5NS45IDU5Mi41IiBzdHJva2U9IiM2RjYwNDgiIHN0cm9rZS1vcGFjaXR5PSIwLjA5IiBzdHJva2Utd2lkdGg9IjAuNTUiLz48cGF0aCBkPSJNNDMzLjMgMTU0LjJRNDA3LjkgMTc4LjcgMzczLjkgMTY5LjMiIHN0cm9rZT0iI0ZCRjdFQyIgc3Ryb2tlLW9wYWNpdHk9IjAuMjciIHN0cm9rZS13aWR0aD0iMC41NyIvPjxwYXRoIGQ9Ik0xNDMuNSA0OTQuMVExNTYuNCA0ODkuNCAxNjcuNyA0OTcuMyIgc3Ryb2tlPSIjRkJGN0VDIiBzdHJva2Utb3BhY2l0eT0iMC40MCIgc3Ryb2tlLXdpZHRoPSIwLjQxIi8+PHBhdGggZD0iTTQxMi45IDIzMS43UTQwMS4zIDIxMy4zIDM4Mi43IDIyNC43IiBzdHJva2U9IiNGQkY3RUMiIHN0cm9rZS1vcGFjaXR5PSIwLjM5IiBzdHJva2Utd2lkdGg9IjAuNDkiLz48cGF0aCBkPSJNNDYuMCAyNTguMVEyOC42IDI1OC4zIDEyLjAgMjY1LjMiIHN0cm9rZT0iIzZGNjA0OCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDkiIHN0cm9rZS13aWR0aD0iMC41NSIvPjxwYXRoIGQ9Ik0yNTAuOSA0MTIuMVEyNjYuMiAzODIuMyAyNzcuMyAzNTAuNiIgc3Ryb2tlPSIjNkY2MDQ4IiBzdHJva2Utb3BhY2l0eT0iMC4xMiIgc3Ryb2tlLXdpZHRoPSIwLjUyIi8+PHBhdGggZD0iTTgwLjAgNDQ3LjlRNzAuMCA0NTAuNSA2NC43IDQ0MS43IiBzdHJva2U9IiNGQkY3RUMiIHN0cm9rZS1vcGFjaXR5PSIwLjI5IiBzdHJva2Utd2lkdGg9IjAuODEiLz48cGF0aCBkPSJNMjE0LjkgMTQ2LjlRMjE2LjEgMTIyLjggMTk2LjggMTA4LjMiIHN0cm9rZT0iI0ZCRjdFQyIgc3Ryb2tlLW9wYWNpdHk9IjAuMzkiIHN0cm9rZS13aWR0aD0iMC42OSIvPjxwYXRoIGQ9Ik01Mi4xIDM1NC43UTU0LjUgMzk1LjggMTQuMiA0MDQuNiIgc3Ryb2tlPSIjRkJGN0VDIiBzdHJva2Utb3BhY2l0eT0iMC4yNCIgc3Ryb2tlLXdpZHRoPSIwLjcxIi8+PHBhdGggZD0iTTMyNy43IDYzOS4yUTM1MC45IDYzOC43IDM1NS4zIDY2MS42IiBzdHJva2U9IiNGQkY3RUMiIHN0cm9rZS1vcGFjaXR5PSIwLjQwIiBzdHJva2Utd2lkdGg9IjAuNTEiLz48cGF0aCBkPSJNMzU0LjAgMzI2LjBRMzg3LjIgMzI2LjYgNDE5LjMgMzE4LjQiIHN0cm9rZT0iI0ZCRjdFQyIgc3Ryb2tlLW9wYWNpdHk9IjAuMzAiIHN0cm9rZS13aWR0aD0iMC44MiIvPjxwYXRoIGQ9Ik02Ny40IDExMy44UTcyLjMgODguNSA0OS42IDc2LjUiIHN0cm9rZT0iI0ZCRjdFQyIgc3Ryb2tlLW9wYWNpdHk9IjAuNDEiIHN0cm9rZS13aWR0aD0iMC43OCIvPjxwYXRoIGQ9Ik00MjguMCAxOTkuOVE0NDcuNSAxOTMuMyA0NDEuNiAxNzMuNiIgc3Ryb2tlPSIjNkY2MDQ4IiBzdHJva2Utb3BhY2l0eT0iMC4xMiIgc3Ryb2tlLXdpZHRoPSIwLjc0Ii8+PHBhdGggZD0iTTExOS4yIDU2Ny45UTEwMS4xIDU2Ny4wIDg0LjYgNTc0LjUiIHN0cm9rZT0iI0ZCRjdFQyIgc3Ryb2tlLW9wYWNpdHk9IjAuNDAiIHN0cm9rZS13aWR0aD0iMC41OSIvPjxwYXRoIGQ9Ik0yNzguMSAzNjcuNVEyNjIuNCAzNDcuNiAyNTYuOCAzMjIuOSIgc3Ryb2tlPSIjNkY2MDQ4IiBzdHJva2Utb3BhY2l0eT0iMC4wNyIgc3Ryb2tlLXdpZHRoPSIwLjY0Ii8+PGNpcmNsZSBjeD0iOTkuOCIgY3k9IjU0MS4wIiByPSIwLjY5IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTYiLz48Y2lyY2xlIGN4PSIxMjYuNSIgY3k9IjUzNC4yIiByPSIwLjc1IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMjEiLz48Y2lyY2xlIGN4PSIzOTIuMSIgY3k9IjM1My42IiByPSIwLjUzIiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTciLz48Y2lyY2xlIGN4PSIzNDMuOSIgY3k9IjEyMy42IiByPSIwLjkyIiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTciLz48Y2lyY2xlIGN4PSIyMjIuMCIgY3k9IjE5My42IiByPSIwLjYwIiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTciLz48Y2lyY2xlIGN4PSIxNzAuMSIgY3k9IjQ2LjMiIHI9IjAuNTkiIGZpbGw9IiM1QTRFM0EiIGZpbGwtb3BhY2l0eT0iMC4xMyIvPjxjaXJjbGUgY3g9IjIyMy45IiBjeT0iMjE4LjYiIHI9IjAuNjEiIGZpbGw9IiM1QTRFM0EiIGZpbGwtb3BhY2l0eT0iMC4yMSIvPjxjaXJjbGUgY3g9IjM2My4xIiBjeT0iNTk3LjAiIHI9IjEuMDQiIGZpbGw9IiM1QTRFM0EiIGZpbGwtb3BhY2l0eT0iMC4yMSIvPjxjaXJjbGUgY3g9IjIwNS4zIiBjeT0iNTcwLjciIHI9IjAuNjQiIGZpbGw9IiM1QTRFM0EiIGZpbGwtb3BhY2l0eT0iMC4yMiIvPjxjaXJjbGUgY3g9IjE5LjciIGN5PSI0MzcuNSIgcj0iMC44OCIgZmlsbD0iIzVBNEUzQSIgZmlsbC1vcGFjaXR5PSIwLjE4Ii8+PGNpcmNsZSBjeD0iNTQyLjQiIGN5PSIyNDguNiIgcj0iMC42MSIgZmlsbD0iIzVBNEUzQSIgZmlsbC1vcGFjaXR5PSIwLjExIi8+PGNpcmNsZSBjeD0iMTUuMCIgY3k9IjQyOS45IiByPSIwLjcwIiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMjEiLz48Y2lyY2xlIGN4PSIyNS4xIiBjeT0iMzAwLjAiIHI9IjAuNTQiIGZpbGw9IiM1QTRFM0EiIGZpbGwtb3BhY2l0eT0iMC4xNiIvPjxjaXJjbGUgY3g9IjExMS42IiBjeT0iNDc2LjgiIHI9IjAuNTQiIGZpbGw9IiM1QTRFM0EiIGZpbGwtb3BhY2l0eT0iMC4xNyIvPjxjaXJjbGUgY3g9IjMyNC4xIiBjeT0iNDMyLjkiIHI9IjAuNzEiIGZpbGw9IiM1QTRFM0EiIGZpbGwtb3BhY2l0eT0iMC4yMCIvPjxjaXJjbGUgY3g9IjUyNC43IiBjeT0iMTMzLjUiIHI9IjAuNTIiIGZpbGw9IiM1QTRFM0EiIGZpbGwtb3BhY2l0eT0iMC4xNiIvPjxjaXJjbGUgY3g9Ijk5LjMiIGN5PSIxNi4xIiByPSIwLjY1IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTEiLz48Y2lyY2xlIGN4PSIyMy4wIiBjeT0iNjQyLjgiIHI9IjAuOTMiIGZpbGw9IiM1QTRFM0EiIGZpbGwtb3BhY2l0eT0iMC4yMCIvPjxjaXJjbGUgY3g9IjY1LjAiIGN5PSI2NTIuMyIgcj0iMC45MiIgZmlsbD0iIzVBNEUzQSIgZmlsbC1vcGFjaXR5PSIwLjE3Ii8+PGNpcmNsZSBjeD0iNTE5LjIiIGN5PSI4OS4wIiByPSIxLjA1IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTIiLz48Y2lyY2xlIGN4PSIzOTYuNCIgY3k9IjY0MS4wIiByPSIxLjAzIiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTciLz48Y2lyY2xlIGN4PSI1MTIuMSIgY3k9IjUyOS43IiByPSIwLjU1IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMjIiLz48Y2lyY2xlIGN4PSI1NDAuNiIgY3k9IjI5Ny45IiByPSIwLjk5IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTkiLz48Y2lyY2xlIGN4PSIzODYuMCIgY3k9IjQ1MC4wIiByPSIxLjA1IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTMiLz48Y2lyY2xlIGN4PSIzODcuNCIgY3k9IjUwOS4yIiByPSIwLjU0IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTMiLz48Y2lyY2xlIGN4PSIyMDUuMiIgY3k9IjU5NC41IiByPSIwLjg4IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTMiLz48Y2lyY2xlIGN4PSI1MDQuNCIgY3k9IjQxLjEiIHI9IjEuMDciIGZpbGw9IiM1QTRFM0EiIGZpbGwtb3BhY2l0eT0iMC4xNiIvPjxjaXJjbGUgY3g9IjI1NS4xIiBjeT0iOTMuNiIgcj0iMC42OSIgZmlsbD0iIzVBNEUzQSIgZmlsbC1vcGFjaXR5PSIwLjE3Ii8+PGNpcmNsZSBjeD0iMjc3LjUiIGN5PSIxMS4xIiByPSIwLjk3IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTAiLz48Y2lyY2xlIGN4PSIyODguNCIgY3k9IjM4MC40IiByPSIwLjU5IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTgiLz48Y2lyY2xlIGN4PSIxMjkuOSIgY3k9IjU5Mi44IiByPSIxLjA5IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMjAiLz48Y2lyY2xlIGN4PSIxMTUuMyIgY3k9IjIyOC4zIiByPSIwLjc3IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTgiLz48Y2lyY2xlIGN4PSI1MTUuMCIgY3k9IjQzMi42IiByPSIwLjk4IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTkiLz48Y2lyY2xlIGN4PSIyNDguNiIgY3k9IjMxNS40IiByPSIwLjk1IiBmaWxsPSIjNUE0RTNBIiBmaWxsLW9wYWNpdHk9IjAuMTMiLz48L3N2Zz4="),
+    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMjAiIGhlaWdodD0iMjIwIj4KPGZpbHRlciBpZD0ibiIgeD0iMCIgeT0iMCIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSI+CjxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjkiIG51bU9jdGF2ZXM9IjIiIHNlZWQ9IjciIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz4KPGZlQ29sb3JNYXRyaXggdmFsdWVzPSIwIDAgMCAwIDAuMTEgIDAgMCAwIDAgMC4xMCAgMCAwIDAgMCAwLjA5ICAwIDAgMCAwLjQyIC0wLjE1Ii8+CjwvZmlsdGVyPgo8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCgjbikiLz4KPC9zdmc+");
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat, repeat;
+  background-position: top, bottom, center, 0 0, 0 0;
+  background-size: 100% 22px, 100% 26px, 100% 100%, 560px 720px, 220px 220px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(28, 26, 23, 0.25);
+}
+.page { display: none; }
+.page.is-active { display: block; }
+html.has-navigated .page.is-active { animation: unroll 0.3s ease-out; }
+@keyframes unroll { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Type on the paper ---------- */
+h1, h2, h3 { font-family: var(--font-display); font-weight: 500; text-wrap: balance; }
+.title { position: relative; text-align: center; }
+.title h1 { max-width: 17em; margin: 0 auto; padding: 0 0.7em; font-size: clamp(1.8rem, 6.2vw, 2.5rem); line-height: 1.22; letter-spacing: 0.01em; }
+.title__sub { max-width: 30em; margin: 14px auto 0; font-size: 1.02rem; font-style: italic; line-height: 1.55; color: var(--ink-muted); text-wrap: balance; }
+.title__meta { margin: 4px 0 0; font-size: 0.88rem; font-style: italic; color: var(--ink-muted); }
+.byline { margin: 14px 0 0; font-style: italic; color: var(--ink-muted); }
+.byline span { font-style: normal; }
+.mark { position: absolute; top: 2px; right: calc(var(--pad) * -0.62); margin: 0; writing-mode: vertical-rl; font-family: var(--font-display); font-weight: 600; font-size: 0.8rem; line-height: 1; letter-spacing: 0.34em; color: var(--accent-crimson); }
+@media (min-width: 700px) { .mark { font-size: 1rem; } .title h1 { padding: 0; } }
+.crest { width: 112px; height: 112px; margin: 0 auto 14px; }
+.title .wordmark { padding: 0; font-size: clamp(1.6rem, 7vw, 3.1rem); letter-spacing: 0.16em; margin-right: -0.16em; text-transform: uppercase; }
+.title__jp { margin: 6px -0.5em 0 0; font-family: var(--font-display); font-size: 1.05rem; letter-spacing: 0.5em; color: var(--accent-crimson); }
+.rule { display: flex; align-items: center; gap: 16px; margin: 44px 0 28px; color: var(--accent-crimson); }
+.rule::before, .rule::after { content: ""; flex: 1; height: 1px; opacity: 0.6; }
+.rule::before { background: linear-gradient(90deg, rgba(110, 43, 37, 0), var(--accent-crimson)); }
+.rule::after { background: linear-gradient(90deg, var(--accent-crimson), rgba(110, 43, 37, 0)); }
+.rule span { margin-right: -0.32em; font-weight: 600; font-size: 0.92rem; letter-spacing: 0.32em; }
+.h2 { margin: 0 0 14px; font-size: 1.42rem; line-height: 1.3; }
+.prose { font-size: 1.12rem; line-height: 1.85; }
+.prose p { margin: 0 0 1.2em; text-wrap: pretty; }
+.prose h2 { margin: 0 0 0.7em; font-size: 1.36rem; line-height: 1.3; }
+.prose .note { font-size: 0.9rem; font-style: italic; line-height: 1.6; color: var(--ink-muted); }
+.dropcap::first-letter { float: left; padding: 0.08em 0.12em 0 0; font-family: var(--font-display); font-weight: 500; font-size: 3.9em; line-height: 0.74; color: var(--accent-crimson); }
+.pull { max-width: 26em; margin: 2.2em auto; text-align: center; font-size: 1.2rem; font-style: italic; line-height: 1.6; text-wrap: balance; }
+.pull::before, .pull::after { content: ""; display: block; width: 2.4rem; height: 1px; margin: 0 auto 1.1em; background: var(--accent-crimson); }
+.pull::after { margin: 1.1em auto 0; }
+.pull b { display: block; margin: 0 -0.3em 0.5em 0; font-style: normal; font-weight: 600; font-size: 1rem; letter-spacing: 0.3em; color: var(--accent-crimson); }
+.question { max-width: 22em; margin: 1.4em auto 0; text-align: center; font-family: var(--font-display); font-size: 1.36rem; line-height: 1.5; text-wrap: balance; }
+.link { color: var(--accent-indigo); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.more { display: inline-block; margin-top: 18px; padding: 8px 0; font-family: var(--font-display); font-weight: 500; font-size: 1.04rem; }
+.sample { font-size: 0.82rem; font-style: italic; color: var(--ink-muted); white-space: nowrap; }
+.status { min-height: 1.5em; margin: 10px 0 0; font-size: 0.92rem; font-style: italic; color: var(--ink-muted); }
+.text-btn { padding: 8px 2px; border: 0; border-bottom: 1px solid currentColor; background: none; color: var(--accent-crimson); font-family: var(--font-display); font-weight: 600; cursor: pointer; }
+.seal-btn { display: inline-block; padding: 12px 20px; border: 0; border-radius: 2px; background: var(--accent-crimson); color: var(--on-photo); font-family: var(--font-display); font-weight: 600; font-size: 1rem; letter-spacing: 0.03em; text-decoration: none; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(244, 241, 234, 0.18); }
+.seal-btn:hover { filter: brightness(1.14); }
+
+/* ---------- Home: where Henro is ---------- */
+.now__line { margin: 0 0 6px; text-align: center; font-size: 1.3rem; line-height: 1.35; }
+.now__facts { margin: 0 0 24px; text-align: center; color: var(--ink-muted); }
+.meridian { position: relative; height: 80px; margin: 0 4px; }
+.meridian__line { position: absolute; left: 0; right: 0; top: 30px; height: 1px; background: rgba(28, 26, 23, 0.45); }
+.meridian__walked { position: absolute; left: 0; top: -1px; height: 3px; background: var(--accent-crimson); }
+.meridian__tick { position: absolute; top: 26px; width: 1px; height: 9px; background: rgba(28, 26, 23, 0.45); }
+.meridian__tick i { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font: normal 0.64rem/1 var(--font-mono); color: var(--ink-muted); white-space: nowrap; }
+.meridian__here { position: absolute; top: 30px; width: 11px; height: 11px; margin: -5px 0 0 -5.5px; border-radius: 50%; background: var(--accent-crimson); box-shadow: 0 0 0 3px var(--bg-washi-scroll); }
+.meridian__here i { position: absolute; bottom: 17px; left: -2px; font: normal 500 0.72rem/1 var(--font-mono); color: var(--accent-crimson); white-space: nowrap; }
+.meridian__ends { position: absolute; left: 0; right: 0; top: 58px; display: flex; justify-content: space-between; font-family: var(--font-display); font-size: 0.86rem; }
+
+/* ---------- Essay lists ---------- */
+.stage-h { margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--border-ink); font-weight: 600; font-size: 0.98rem; color: var(--accent-crimson); }
+.essays { margin: 0; padding: 0; list-style: none; }
+.essays li { border-bottom: 1px solid var(--border-ink); }
+.essays li:last-child { border-bottom: 0; }
+.essays a { display: grid; grid-template-columns: 2.1rem 1fr; column-gap: 6px; padding: 22px 0; color: inherit; text-decoration: none; }
+.essays__no { grid-row: 1 / span 3; font-weight: 600; font-size: 1.15rem; line-height: 1.5; color: var(--accent-crimson); }
+.essays__title { font-family: var(--font-display); font-weight: 500; font-size: 1.3rem; line-height: 1.32; text-wrap: balance; }
+.essays__excerpt { margin-top: 6px; line-height: 1.6; color: var(--ink-muted); }
+.essays__meta { margin-top: 8px; font-size: 0.88rem; font-style: italic; color: var(--ink-muted); }
+.essays a:hover .essays__title { text-decoration: underline; text-decoration-color: var(--accent-crimson); text-decoration-thickness: 1px; text-underline-offset: 5px; }
+
+/* ---------- Follow ---------- */
+.follow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; margin-top: 14px; }
+.follow label { flex-basis: 100%; font-size: 0.88rem; color: var(--ink-muted); }
+.follow input { flex: 1 1 12rem; min-width: 0; padding: 8px 2px; border: 0; border-bottom: 1px solid var(--ink-sumi); border-radius: 0; background: transparent; color: var(--ink-sumi); font: inherit; font-size: 1.05rem; }
+.follow input::placeholder { color: rgba(90, 83, 74, 0.8); }
+
+/* ---------- Essay page ---------- */
+.back { display: inline-block; margin: -12px 0 24px; padding: 8px 0; font-family: var(--font-display); font-size: 0.95rem; color: var(--ink-muted); text-decoration: none; }
+.back::before { content: "\2190"; margin-right: 0.5em; }
+.back:hover { color: var(--accent-indigo); }
+.colophon { display: grid; gap: 30px; }
+.colophon h2 { margin: 0 0 6px; font-weight: 600; font-size: 1.05rem; }
+.colophon p { margin: 0 0 12px; color: var(--ink-muted); }
+.share ul { display: flex; flex-wrap: wrap; gap: 0 20px; margin: 0; padding: 0; list-style: none; }
+.share a, .share button { display: inline-block; padding: 9px 0; border: 0; background: none; color: var(--accent-indigo); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; cursor: pointer; }
+.next { display: block; padding-top: 22px; border-top: 1px solid var(--border-ink); color: inherit; text-decoration: none; }
+.next small { display: block; font-size: 0.88rem; font-style: italic; color: var(--ink-muted); }
+.next strong { font-family: var(--font-display); font-weight: 500; font-size: 1.25rem; line-height: 1.35; }
+.next strong span { margin-right: 0.5em; font-weight: 600; color: var(--accent-crimson); }
+.next:hover strong { text-decoration: underline; text-decoration-color: var(--accent-crimson); text-decoration-thickness: 1px; text-underline-offset: 5px; }
+@media (min-width: 640px) { .colophon { grid-template-columns: 1fr 1fr; } .next { grid-column: 1 / -1; } }
+
+/* ---------- Finances ---------- */
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 30px 0 0; text-align: center; }
+.metrics dt { min-height: 2.7em; font-size: 0.84rem; line-height: 1.35; color: var(--ink-muted); }
+.metrics dd { margin: 4px 0 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: clamp(1.02rem, 4.5vw, 1.6rem); }
+.ledger { width: 100%; border-collapse: collapse; font-size: 0.96rem; line-height: 1.45; }
+.ledger caption { text-align: left; }
+.ledger th { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--ink-sumi); text-align: left; font-weight: 400; font-size: 0.82rem; color: var(--ink-muted); }
+.ledger td { padding: 12px 10px 12px 0; border-bottom: 1px solid var(--border-ink); vertical-align: top; }
+.ledger small { display: block; font-size: 0.86rem; color: var(--ink-muted); }
+.ledger .when { white-space: nowrap; font-family: var(--font-mono); font-size: 0.82rem; }
+.ledger .amt, .ledger th:last-child { padding-right: 0; text-align: right; }
+.ledger .amt { white-space: nowrap; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.ledger .amt--in { color: var(--accent-indigo); }
+.ledger__empty { display: none; margin: 0; padding: 36px 0; border-bottom: 1px solid var(--border-ink); text-align: center; font-style: italic; color: var(--ink-muted); }
+[data-ledger="empty"] .ledger tbody { display: none; }
+[data-ledger="empty"] .ledger__empty { display: block; }
+.proto-control { margin: 18px 0 0; font-size: 0.88rem; color: var(--ink-muted); }
+.proto-control .text-btn { margin-left: 6px; font-size: 0.92rem; }
+
+/* ---------- FAQ, credits, donate ---------- */
+.qa { margin: 0; }
+.qa > div { padding: 22px 0; border-bottom: 1px solid var(--border-ink); }
+.qa > div:last-child { border-bottom: 0; }
+.qa dt, .qa dd { display: grid; grid-template-columns: 2rem 1fr; }
+.qa dt { font-family: var(--font-display); font-weight: 600; font-size: 1.16rem; line-height: 1.4; }
+.qa dd { margin: 8px 0 0; font-size: 1.05rem; line-height: 1.75; }
+.qa dt > span:first-child, .qa dd > span:first-child { font-weight: 600; color: var(--accent-crimson); }
+.qa dd > span:first-child { opacity: 0.75; }
+.credits { margin: 0; }
+.credits > div { padding: 22px 0; border-bottom: 1px solid var(--border-ink); }
+.credits > div:last-child { border-bottom: 0; }
+.credits dt { font-family: var(--font-display); font-weight: 500; font-size: 1.3rem; line-height: 1.32; }
+.credits dd { margin: 6px 0 0; color: var(--ink-muted); }
+.credits dd.names { margin-top: 12px; color: var(--ink-sumi); font-size: 1.05rem; }
+.gifts { margin: 28px 0; border-top: 1px solid var(--border-ink); }
+.gifts > div { display: grid; grid-template-columns: 4.4rem 1fr; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--border-ink); }
+.gifts dt { font-family: var(--font-mono); font-size: 1.15rem; }
+.gifts dd { margin: 0; font-size: 1.06rem; }
+.centered { text-align: center; }
+.stamp { display: inline-block; margin: 0 0 20px; padding: 7px 10px 6px 14px; border: 2px solid var(--accent-crimson); transform: rotate(-3deg); color: var(--accent-crimson); font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.3; letter-spacing: 0.26em; }
+.stamp small { display: block; font-size: 0.6rem; letter-spacing: 0.22em; }
+
+/* ---------- Foot of every scroll ---------- */
+.scroll-foot { margin-top: 64px; text-align: center; color: var(--ink-muted); }
+.scroll-foot__road { margin: 0; font-size: 0.94rem; font-style: italic; }
+.scroll-foot__road span { display: block; margin: 0 -0.4em 6px 0; font-style: normal; font-weight: 600; letter-spacing: 0.4em; color: var(--accent-crimson); }
+.scroll-foot__road::after { content: "\2193"; display: block; margin-top: 6px; font-style: normal; color: var(--accent-crimson); }
+.scroll-foot__proto { margin: 26px 0 0; font: normal 0.68rem/1.4 var(--font-mono); }
+.proto-top { margin: -30px 0 28px; text-align: center; font: normal 0.68rem/1.4 var(--font-mono); color: var(--ink-muted); }
+.proto-top span { margin-right: 0.7em; font-family: var(--font-display); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.3em; color: var(--accent-crimson); }
+
+/* ---------- The road under the scroll ---------- */
+.reveal { position: relative; z-index: 5; min-height: max(92vh, calc(100vh - var(--header-h) + 46px)); }
+.reveal__caption {
+  position: absolute; left: 50%; top: 7vh; transform: translateX(-50%);
+  width: min(90vw, 23rem); padding: 30px 20px; text-align: center; color: var(--on-photo);
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.7);
+  background: radial-gradient(closest-side, rgba(8, 9, 12, 0.46), rgba(8, 9, 12, 0));
+}
+.reveal__jp { margin: 0 -0.5em 0 0; font-weight: 600; font-size: 1.05rem; letter-spacing: 0.5em; }
+.reveal__line { margin: 10px 0 0; font-family: var(--font-display); font-size: 1.2rem; line-height: 1.5; text-wrap: balance; }
+.reveal__link { display: inline-block; margin-top: 12px; padding: 8px 2px; font-style: italic; color: var(--on-photo); text-underline-offset: 5px; }
+@media (min-aspect-ratio: 5/4) and (min-width: 900px) {
+  .reveal__caption { left: 5vw; top: 50%; transform: translateY(-50%); width: min(20rem, 26vw); padding: 34px 26px; text-align: left; }
+  .reveal[data-fit="hang"] .reveal__caption { left: calc(50% + (100vh - var(--header-h) - 7vh) * 0.225 + 2.4rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.has-navigated .page.is-active { animation: none; }
+  .backdrop__photo { transform: none; }
+  .menu-btn__lines i { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="backdrop" id="backdrop" data-fit="cover" aria-hidden="true">
+  <div class="backdrop__photo" id="bd-photo"></div>
+  <div class="backdrop__ambient" id="bd-ambient"></div>
+  <div class="backdrop__dusk"></div>
+  <div class="backdrop__print" id="bd-print"></div>
+</div>
+
+<header class="site-header">
+  <a class="brand" href="#home" aria-label="Camino Henro, home">
+    <span class="brand__seal"><img src="assets/crest-crimson.webp" alt="" width="40" height="40"></span>
+    <span class="brand__text">
+      <span class="brand__jp" lang="ja">カミノ遍路</span>
+      <span class="brand__en">Camino Henro</span>
+    </span>
+  </a>
+  <nav class="nav" aria-label="Pages">
+    <a href="#home" data-nav-link="home">Home</a>
+    <a href="#essays" data-nav-link="essays">Essays</a>
+    <a href="#finances" data-nav-link="finances">Finances</a>
+    <a href="#faq" data-nav-link="faq">FAQ</a>
+    <a href="#credits" data-nav-link="credits">Credits</a>
+    <span class="nav__later" title="In preparation for the second edition">
+      <a href="#map" data-nav-link="map">Map</a>
+      <a href="#inventory" data-nav-link="inventory">Inventory</a>
+      <a href="#forum" data-nav-link="forum">Forum</a>
+      <em lang="ja" aria-hidden="true">準備中</em>
+    </span>
+  </nav>
+  <a class="donate" href="#donate" data-nav-link="donate">Donate <span lang="ja" aria-hidden="true">印</span></a>
+  <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu">
+    <span class="menu-btn__lines" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="sr">Menu</span>
+  </button>
+</header>
+
+<div class="menu" id="menu" hidden>
+  <nav aria-label="All pages">
+    <ul>
+      <li><a href="#home" data-nav-link="home"><span lang="ja" aria-hidden="true">起点</span>Home</a></li>
+      <li><a href="#essays" data-nav-link="essays"><span lang="ja" aria-hidden="true">随筆</span>Essays</a></li>
+      <li><a href="#finances" data-nav-link="finances"><span lang="ja" aria-hidden="true">会計</span>Finances</a></li>
+      <li><a href="#faq" data-nav-link="faq"><span lang="ja" aria-hidden="true">問答</span>Questions and answers</a></li>
+      <li><a href="#credits" data-nav-link="credits"><span lang="ja" aria-hidden="true">感謝</span>Credits</a></li>
+      <li><a href="#donate" data-nav-link="donate"><span lang="ja" aria-hidden="true">お接待</span>Donate</a></li>
+    </ul>
+    <p class="menu__later-h">In preparation for the second edition</p>
+    <ul class="menu__later">
+      <li><a href="#map" data-nav-link="map"><span lang="ja" aria-hidden="true">地図</span>Route map</a></li>
+      <li><a href="#inventory" data-nav-link="inventory"><span lang="ja" aria-hidden="true">装備</span>The rucksack</a></li>
+      <li><a href="#forum" data-nav-link="forum"><span lang="ja" aria-hidden="true">広場</span>Forum</a></li>
+    </ul>
+  </nav>
+</div>
+
+<main class="stage">
+  <div class="dowel dowel--top"></div>
+  <div class="washi">
+    <p class="proto-top"><span lang="ja">試作</span>Prototype. Text and figures are samples.</p>
+
+    <!-- ============ Home ============ -->
+    <section class="page is-active" id="page-home" data-title="Camino Henro" data-reveal="apple">
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">同行二人</p>
+        <img class="crest" src="assets/crest-crimson.webp" alt="Henro's stamp: a sedge hat and a scallop shell over two crossed staves" width="112" height="112">
+        <h1 class="wordmark">Camino Henro</h1>
+        <p class="title__jp" lang="ja">カミノ遍路</p>
+        <p class="title__sub">From the End of the Earth to the Land of the Rising Sun</p>
+      </header>
+
+      <div class="rule"><span lang="ja">現在地</span></div>
+      <h2 class="now__line">Henro is on the Meseta in Castile, Spain.</h2>
+      <p class="now__facts">Day 38 on the road. 742 km on foot. 139° of longitude still ahead. <span class="sample">Sample figures.</span></p>
+      <div class="meridian" role="img" aria-label="Longitude scale from 9 degrees west in Portugal to 134 degrees east in Japan. Henro is at 5 degrees west.">
+        <div class="meridian__line"><span class="meridian__walked" style="width: 3.1%"></span></div>
+        <span class="meridian__tick" style="left: 0"></span>
+        <span class="meridian__tick" style="left: 6.6%"><i>0°</i></span>
+        <span class="meridian__tick" style="left: 27.5%"><i>30°E</i></span>
+        <span class="meridian__tick" style="left: 48.4%"><i>60°E</i></span>
+        <span class="meridian__tick" style="left: 69.3%"><i>90°E</i></span>
+        <span class="meridian__tick" style="left: 90.2%"><i>120°E</i></span>
+        <span class="meridian__tick" style="left: 100%"></span>
+        <span class="meridian__here" style="left: 3.1%"><i>5°W</i></span>
+        <div class="meridian__ends"><span>Portugal, 9°W</span><span>Japan, 134°E</span></div>
+      </div>
+
+      <div class="rule"><span lang="ja">哲学の道</span></div>
+      <h2 class="h2">The pilgrim's manifesto</h2>
+      <div class="prose">
+        <p>Modern life surrounds us with financial instruments, insurance policies and digital vaults, yet anxiety over basic survival remains sharper than ever. Camino Henro is a pilgrimage on foot across a whole continent, from Portugal to Japan, made to investigate one question.</p>
+      </div>
+      <p class="question">What is the true philosophical foundation for building a sense of material security in human life?</p>
+
+      <div class="rule"><span lang="ja">随筆</span></div>
+      <h2 class="h2">Latest essays</h2>
+      <ul class="essays">
+        <li><a href="#essay-hospitality">
+          <span class="essays__no" lang="ja" aria-hidden="true">参</span>
+          <span class="essays__title">The Hospitality of Strangers as Economic Bedrock</span>
+          <span class="essays__excerpt">Notes on reciprocity, almsgiving, and why a single piece of fruit handed to a walker reveals our deepest safety net.</span>
+          <span class="essays__meta">Essay 3. Written on the Meseta, Spain. 9 minutes.</span>
+        </a></li>
+        <li><a href="#essay-two-staves">
+          <span class="essays__no" lang="ja" aria-hidden="true">弐</span>
+          <span class="essays__title">Two Staves, One Path: Why the Camino Meets Shikoku</span>
+          <span class="essays__excerpt">Saint James and Kūkai, the scallop shell and the sedge hat: how two pilgrim roads answer the same fear of scarcity.</span>
+          <span class="essays__meta">Essay 2. Written in Astorga, Spain. 11 minutes.</span>
+        </a></li>
+        <li><a href="#essay-rucksack">
+          <span class="essays__no" lang="ja" aria-hidden="true">壱</span>
+          <span class="essays__title">On the Weight of a Rucksack &amp; the Gift of the Road</span>
+          <span class="essays__excerpt">When everything required to survive fits inside forty liters of canvas, the distinction between wealth and burden becomes razor-sharp.</span>
+          <span class="essays__meta">Essay 1. Written before setting out, Portugal. 8 minutes.</span>
+        </a></li>
+      </ul>
+      <a class="link more" href="#essays">All essays</a>
+
+      <div class="rule"><span lang="ja">便り</span></div>
+      <h2 class="h2">Follow the walk</h2>
+      <p>One short email when a new essay is posted. Nothing else.</p>
+      <form class="follow" data-follow>
+        <label for="follow-email-home">Email address</label>
+        <input id="follow-email-home" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
+        <button class="text-btn" type="submit">Subscribe</button>
+      </form>
+      <p class="status" role="status"></p>
+    </section>
+
+    <!-- ============ Essays index ============ -->
+    <section class="page" id="page-essays" data-title="Essays" data-reveal="apple">
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">随筆</p>
+        <h1>Essays</h1>
+        <p class="title__sub">Written in rural libraries, on monastery benches and at roadside camps across Eurasia.</p>
+      </header>
+      <div class="rule"><span lang="ja">目次</span></div>
+      <h2 class="stage-h">Stage 1, Iberia</h2>
+      <ol class="essays">
+        <li><a href="#essay-rucksack">
+          <span class="essays__no" lang="ja" aria-hidden="true">壱</span>
+          <span class="essays__title">On the Weight of a Rucksack &amp; the Gift of the Road</span>
+          <span class="essays__excerpt">Where material sufficiency ends and hoarding begins, examined before the first step east.</span>
+          <span class="essays__meta">Essay 1. Written before setting out, Portugal. 8 minutes.</span>
+        </a></li>
+        <li><a href="#essay-two-staves">
+          <span class="essays__no" lang="ja" aria-hidden="true">弐</span>
+          <span class="essays__title">Two Staves, One Path: Why the Camino Meets Shikoku</span>
+          <span class="essays__excerpt">Why the scallop shell and the woven sedge hat belong on the same crest.</span>
+          <span class="essays__meta">Essay 2. Written in Astorga, Spain. 11 minutes.</span>
+        </a></li>
+        <li><a href="#essay-hospitality">
+          <span class="essays__no" lang="ja" aria-hidden="true">参</span>
+          <span class="essays__title">The Hospitality of Strangers as Economic Bedrock</span>
+          <span class="essays__excerpt">Reciprocity, almsgiving, and why vulnerability on the road reveals our deepest social safety net.</span>
+          <span class="essays__meta">Essay 3. Written on the Meseta, Spain. 9 minutes.</span>
+        </a></li>
+      </ol>
+    </section>
+
+    <!-- ============ Essay 1 ============ -->
+    <section class="page" id="page-essay-rucksack" data-title="On the Weight of a Rucksack" data-nav="essays" data-reveal="apple">
+      <a class="back" href="#essays">All essays</a>
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">随筆 壱</p>
+        <h1>On the Weight of a Rucksack &amp; the Gift of the Road</h1>
+        <p class="byline">by Henro <span lang="ja">遍路</span></p>
+        <p class="title__meta">Essay 1. Written before setting out, Portugal. 8 minutes.</p>
+      </header>
+      <div class="rule"><span lang="ja">其の一</span></div>
+      <div class="prose">
+        <p class="note">Sample text for the prototype. Henro's own essay will replace it.</p>
+        <p class="dropcap">Before a pilgrim takes the first step eastward toward the rising sun, every object in his possession is put on trial by gravity. In a stationary life, an extra coat, a third pair of boots or an unused ledger costs nothing to keep in the corner of a room. On the road from Portugal to Japan, every gram demands metabolic tribute.</p>
+        <p>The night before leaving, everything goes on the floor and each object answers one question: is it worth carrying across a continent? Most things fail. What passes fits inside forty liters of canvas.</p>
+        <p class="pull"><b lang="ja">同行二人</b>Walking together, two as one. On the trail, material security is found in the rhythm of the step and the unexpected fruit offered along the way.</p>
+        <p>We are taught to equate security with accumulation, an ever higher wall of assets between ourselves and contingency. The paradox of the long-distance pilgrim is that security grows in direct proportion to what one can relinquish while remaining whole.</p>
+        <div class="rule"><span lang="ja">其の二</span></div>
+        <h2>A ledger of grams</h2>
+        <p>A rucksack is an honest ledger. It records every decision as weight and presents the bill at the first long hill. A house keeps no such account. Things settle into cupboards and stay there for years without ever asking to be carried.</p>
+        <p>The first week on foot edits a pack more severely than any packing list. Whatever has gone unused for seven days is usually given away on the eighth, and the shoulders register the gift before the mind does.</p>
+        <div class="rule"><span lang="ja">其の三</span></div>
+        <h2>The gift of the road</h2>
+        <p>The other half of the answer arrives from outside the pack. A stranger fills a water bottle. A farmer points to a fig tree and says to take what is ripe. In Shikoku this has a name, osettai, and it is offered to the pilgrim as a matter of course.</p>
+        <p>A pack that is light enough leaves a hand free to receive. That may be the first working definition of material security this walk can offer: enough to keep moving, and a free hand.</p>
+      </div>
+      <div class="rule"><span lang="ja">印</span></div>
+      <div class="colophon">
+        <div class="share" data-share-url="https://caminohenro.com/#essay-rucksack" data-share-title="On the Weight of a Rucksack &amp; the Gift of the Road, by Henro">
+          <h2>Share this essay</h2>
+          <ul>
+            <li><button type="button" data-copy>Copy link</button></li>
+            <li><a data-share="x" href="https://twitter.com/intent/tweet">X</a></li>
+            <li><a data-share="whatsapp" href="https://wa.me/">WhatsApp</a></li>
+            <li><a data-share="reddit" href="https://www.reddit.com/submit">Reddit</a></li>
+          </ul>
+          <p class="status" role="status"></p>
+        </div>
+        <div class="sustain">
+          <h2>Sustain the walk</h2>
+          <p>Food, a bunk and boot soles between here and Japan.</p>
+          <a class="seal-btn" href="#donate">Offer osettai <span lang="ja" aria-hidden="true">印</span></a>
+        </div>
+        <a class="next" href="#essay-two-staves"><small>Next essay</small><strong><span lang="ja" aria-hidden="true">弐</span>Two Staves, One Path: Why the Camino Meets Shikoku</strong></a>
+      </div>
+    </section>
+
+    <!-- ============ Essay 2 ============ -->
+    <section class="page" id="page-essay-two-staves" data-title="Two Staves, One Path" data-nav="essays" data-reveal="astorga">
+      <a class="back" href="#essays">All essays</a>
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">随筆 弐</p>
+        <h1>Two Staves, One Path: Why the Camino Meets Shikoku</h1>
+        <p class="byline">by Henro <span lang="ja">遍路</span></p>
+        <p class="title__meta">Essay 2. Written in Astorga, Spain. 11 minutes.</p>
+      </header>
+      <div class="rule"><span lang="ja">其の一</span></div>
+      <div class="prose">
+        <p class="note">Sample text for the prototype. This essay has its own photograph under the scroll, so keep scrolling past the end.</p>
+        <p class="dropcap">Two roads have taught people to walk for centuries. One runs west across Spain to the tomb of Saint James. The other circles the island of Shikoku through eighty-eight temples in the footsteps of Kūkai. They share almost nothing in doctrine and almost everything in practice.</p>
+        <p>Both give the walker a staff, a hat against the weather and a mark that says pilgrim to anyone who sees it: a scallop shell on the Camino, a white robe and a sedge hat in Shikoku. Both rely on the same economy. The walker arrives with little, and the people along the road make up the difference.</p>
+        <p>The crest of this walk puts the two together on purpose. The staff of the Camino and the staff of the henro are crossed under one hat, with the shell between them. The hat carries four characters, <span lang="ja">同行二人</span>: two travelling together.</p>
+      </div>
+      <div class="rule"><span lang="ja">印</span></div>
+      <div class="colophon">
+        <div class="share" data-share-url="https://caminohenro.com/#essay-two-staves" data-share-title="Two Staves, One Path: Why the Camino Meets Shikoku, by Henro">
+          <h2>Share this essay</h2>
+          <ul>
+            <li><button type="button" data-copy>Copy link</button></li>
+            <li><a data-share="x" href="https://twitter.com/intent/tweet">X</a></li>
+            <li><a data-share="whatsapp" href="https://wa.me/">WhatsApp</a></li>
+            <li><a data-share="reddit" href="https://www.reddit.com/submit">Reddit</a></li>
+          </ul>
+          <p class="status" role="status"></p>
+        </div>
+        <div class="sustain">
+          <h2>Sustain the walk</h2>
+          <p>Food, a bunk and boot soles between here and Japan.</p>
+          <a class="seal-btn" href="#donate">Offer osettai <span lang="ja" aria-hidden="true">印</span></a>
+        </div>
+        <a class="next" href="#essay-hospitality"><small>Next essay</small><strong><span lang="ja" aria-hidden="true">参</span>The Hospitality of Strangers as Economic Bedrock</strong></a>
+      </div>
+    </section>
+
+    <!-- ============ Essay 3 ============ -->
+    <section class="page" id="page-essay-hospitality" data-title="The Hospitality of Strangers" data-nav="essays" data-reveal="apple">
+      <a class="back" href="#essays">All essays</a>
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">随筆 参</p>
+        <h1>The Hospitality of Strangers as Economic Bedrock</h1>
+        <p class="byline">by Henro <span lang="ja">遍路</span></p>
+        <p class="title__meta">Essay 3. Written on the Meseta, Spain. 9 minutes.</p>
+      </header>
+      <div class="rule"><span lang="ja">其の一</span></div>
+      <div class="prose">
+        <p class="note">Sample text for the prototype. Henro's own essay will replace it.</p>
+        <p class="dropcap">Somewhere on a long road a stranger hands a walker a piece of fruit. Nothing is asked in return, and both go on their way. Economists have a poor vocabulary for this moment. Pilgrims have a precise one.</p>
+        <p>In Shikoku the gift is called osettai, and giving it is understood as a way of taking part in the pilgrimage without leaving home. On the Camino the same instinct runs through the donativo hostels, where a bed is offered and each guest leaves what they can.</p>
+        <p>A safety net made of such gestures holds no reserves and publishes no accounts, and it has carried walkers along these roads for centuries. This essay asks what that says about the systems that do hold reserves.</p>
+      </div>
+      <div class="rule"><span lang="ja">印</span></div>
+      <div class="colophon">
+        <div class="share" data-share-url="https://caminohenro.com/#essay-hospitality" data-share-title="The Hospitality of Strangers as Economic Bedrock, by Henro">
+          <h2>Share this essay</h2>
+          <ul>
+            <li><button type="button" data-copy>Copy link</button></li>
+            <li><a data-share="x" href="https://twitter.com/intent/tweet">X</a></li>
+            <li><a data-share="whatsapp" href="https://wa.me/">WhatsApp</a></li>
+            <li><a data-share="reddit" href="https://www.reddit.com/submit">Reddit</a></li>
+          </ul>
+          <p class="status" role="status"></p>
+        </div>
+        <div class="sustain">
+          <h2>Sustain the walk</h2>
+          <p>Food, a bunk and boot soles between here and Japan.</p>
+          <a class="seal-btn" href="#donate">Offer osettai <span lang="ja" aria-hidden="true">印</span></a>
+        </div>
+        <a class="next" href="#essays"><small>That was the latest essay</small><strong>All essays</strong></a>
+      </div>
+    </section>
+
+    <!-- ============ Finances ============ -->
+    <section class="page" id="page-finances" data-title="Finances" data-reveal="apple">
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">会計報告</p>
+        <h1>Finances</h1>
+        <p class="title__sub">Every euro given and every euro spent between Portugal and Japan is written here.</p>
+      </header>
+      <div id="ledger-wrap" data-ledger="sample">
+        <dl class="metrics">
+          <div><dt>Osettai received</dt><dd id="sum-in">€0.00</dd></div>
+          <div><dt>Spent on the road</dt><dd id="sum-out">€0.00</dd></div>
+          <div><dt>Reserve</dt><dd id="sum-reserve">€0.00</dd></div>
+        </dl>
+        <div class="rule"><span lang="ja">帳簿</span></div>
+        <table class="ledger">
+          <caption class="sr">Ledger of gifts and expenses</caption>
+          <thead>
+            <tr><th scope="col">Date</th><th scope="col">Entry</th><th scope="col">EUR</th></tr>
+          </thead>
+          <tbody>
+            <tr data-amt="40"><td class="when">12 Oct</td><td>Osettai from two readers<small>Online</small></td><td class="amt amt--in">+40.00</td></tr>
+            <tr data-amt="-14"><td class="when">09 Oct</td><td>Boot repair and new laces<small>Sahagún</small></td><td class="amt">−14.00</td></tr>
+            <tr data-amt="25"><td class="when">06 Oct</td><td>Osettai from a reader<small>Online</small></td><td class="amt amt--in">+25.00</td></tr>
+            <tr data-amt="-6.4"><td class="when">04 Oct</td><td>Bread, cheese and fruit<small>Astorga</small></td><td class="amt">−6.40</td></tr>
+            <tr data-amt="-10"><td class="when">03 Oct</td><td>Pilgrim hostel, one night<small>Astorga</small></td><td class="amt">−10.00</td></tr>
+          </tbody>
+        </table>
+        <p class="ledger__empty">No entries yet. The first gift and the first expense will be written here.</p>
+        <p class="proto-control">Prototype view: sample entries.<button class="text-btn" type="button" id="ledger-toggle">Show the empty ledger</button></p>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="page" id="page-faq" data-title="Questions and answers" data-reveal="apple">
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">問答</p>
+        <h1>Questions and answers</h1>
+        <p class="title__sub">What people ask along the way.</p>
+      </header>
+      <div class="rule"><span lang="ja">問答</span></div>
+      <dl class="qa">
+        <div>
+          <dt><span lang="ja" aria-hidden="true">問</span><span>Why walk from Portugal to Japan?</span></dt>
+          <dd><span lang="ja" aria-hidden="true">答</span><span>Portugal and Japan sit at the two ends of the Eurasian landmass. Walking from one to the other joins the Camino de Santiago to the eighty-eight temples of Shikoku in a single road.</span></dd>
+        </div>
+        <div>
+          <dt><span lang="ja" aria-hidden="true">問</span><span>What does the crest mean?</span></dt>
+          <dd><span lang="ja" aria-hidden="true">答</span><span>It sets the sedge hat of the Shikoku pilgrim, marked with a Sanskrit seed syllable, above the scallop shell and the cross of Saint James. Two crossed pilgrim staves lie beneath them.</span></dd>
+        </div>
+        <div>
+          <dt><span lang="ja" aria-hidden="true">問</span><span>How are essays published from the road?</span></dt>
+          <dd><span lang="ja" aria-hidden="true">答</span><span>Henro writes on a phone or a library computer and presses publish. The essay appears here about a minute later.</span></dd>
+        </div>
+        <div>
+          <dt><span lang="ja" aria-hidden="true">問</span><span>What happens to donations?</span></dt>
+          <dd><span lang="ja" aria-hidden="true">答</span><span>Every gift goes to food, shelter and worn-out gear. Each euro in or out is written in the <a class="link" href="#finances">finances ledger</a>.</span></dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- ============ Credits ============ -->
+    <section class="page" id="page-credits" data-title="Credits" data-reveal="apple">
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">感謝</p>
+        <h1>Credits and gratitude</h1>
+        <p class="title__sub">Everyone who has helped the walk and this site.</p>
+      </header>
+      <div class="rule"><span lang="ja">同行二人</span></div>
+      <dl class="credits">
+        <div>
+          <dt>Technical and creative collaborators</dt>
+          <dd>The friends who built, host and maintain this site while Henro walks.</dd>
+          <dd class="names">[Name], [country]. [What they did.]</dd>
+        </div>
+        <div>
+          <dt>Road angels</dt>
+          <dd>Strangers, monasteries and families who offered water, fruit, shelter or conversation.</dd>
+          <dd class="names">[Name or description], [place]. [What they gave.]</dd>
+        </div>
+        <div>
+          <dt>Patrons of osettai</dt>
+          <dd>Readers who have contributed to food, shelter and gear. Names appear with each patron's permission.</dd>
+          <dd class="names">[Name], [country].</dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- ============ Donate ============ -->
+    <section class="page" id="page-donate" data-title="Offer osettai" data-reveal="apple">
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">お接待</p>
+        <h1>Offer osettai</h1>
+        <p class="title__sub">Share in the walk by sustaining it.</p>
+      </header>
+      <div class="rule"><span lang="ja">お接待</span></div>
+      <div class="prose">
+        <p>In the Shikoku pilgrimage tradition, giving tea, a piece of fruit or a night's lodging to a passing pilgrim is called osettai. Every contribution goes to food, shelter and replacing worn gear across Eurasia, and each one is written in the <a class="link" href="#finances">finances ledger</a>.</p>
+      </div>
+      <dl class="gifts">
+        <div><dt>€5</dt><dd>A roadside meal of bread and tea</dd></div>
+        <div><dt>€15</dt><dd>A bunk in a hostel or monastery</dd></div>
+        <div><dt>€40</dt><dd>New soles for the boots</dd></div>
+      </dl>
+      <div class="centered">
+        <button class="seal-btn" type="button" data-proto-msg="Prototype: on the live site this opens Henro's Stripe payment page. Nothing was charged.">Offer osettai through Stripe <span lang="ja" aria-hidden="true">印</span></button>
+        <p class="status" role="status">You choose the amount. Stripe takes the payment, and this site never sees your card.</p>
+      </div>
+    </section>
+
+    <!-- ============ Edition 2 pages ============ -->
+    <section class="page" id="page-map" data-title="Route map" data-reveal="apple">
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">地図</p>
+        <p class="stamp"><span lang="ja">準備中</span><small>UNDER CONSTRUCTION</small></p>
+        <h1>Route map</h1>
+        <p class="title__sub">Planned for the second edition of this site.</p>
+      </header>
+      <div class="rule"><span lang="ja">地図</span></div>
+      <div class="prose">
+        <p>An interactive map of Eurasia. The road Henro has already walked is drawn as a crimson ink line that gains detail as you zoom in.</p>
+      </div>
+    </section>
+
+    <section class="page" id="page-inventory" data-title="The rucksack" data-reveal="apple">
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">装備</p>
+        <p class="stamp"><span lang="ja">準備中</span><small>UNDER CONSTRUCTION</small></p>
+        <h1>The rucksack</h1>
+        <p class="title__sub">Planned for the second edition of this site.</p>
+      </header>
+      <div class="rule"><span lang="ja">装備</span></div>
+      <div class="prose">
+        <p>Every item Henro carries, laid out like the inventory screen of a role-playing game. Select an item to see its weight, its specifications and a note on why it earned its place.</p>
+      </div>
+    </section>
+
+    <section class="page" id="page-forum" data-title="Forum" data-reveal="apple">
+      <header class="title">
+        <p class="mark" lang="ja" aria-hidden="true">広場</p>
+        <p class="stamp"><span lang="ja">準備中</span><small>UNDER CONSTRUCTION</small></p>
+        <h1>Forum</h1>
+        <p class="title__sub">Planned for the second edition of this site.</p>
+      </header>
+      <div class="rule"><span lang="ja">広場</span></div>
+      <div class="prose">
+        <p>A place for readers to open topics and answer questions about the journey and the philosophy behind it.</p>
+      </div>
+    </section>
+
+    <footer class="scroll-foot">
+      <p class="scroll-foot__road"><span lang="ja">道は続く</span>The road goes on below.</p>
+      <p class="scroll-foot__proto">Prototype. Text and figures are samples.</p>
+    </footer>
+  </div>
+  <div class="dowel dowel--bottom" id="dowel-bottom"></div>
+</main>
+
+<footer class="reveal" id="reveal" data-fit="cover">
+  <div class="reveal__caption">
+    <p class="reveal__jp" lang="ja" id="reveal-jp">お接待</p>
+    <p class="reveal__line" id="reveal-line">Osettai. The simplest gift of the road is enough.</p>
+    <a class="reveal__link" id="reveal-link" href="#donate">Offer osettai</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+  var pages = Array.prototype.slice.call(document.querySelectorAll('.page'));
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('[data-nav-link]'));
+  var backdrop = document.getElementById('backdrop');
+  var bdPhoto = document.getElementById('bd-photo');
+  var bdAmbient = document.getElementById('bd-ambient');
+  var bdPrint = document.getElementById('bd-print');
+  var reveal = document.getElementById('reveal');
+  var revealJp = document.getElementById('reveal-jp');
+  var revealLine = document.getElementById('reveal-line');
+  var revealLink = document.getElementById('reveal-link');
+  var bottomDowel = document.getElementById('dowel-bottom');
+  var menu = document.getElementById('menu');
+  var menuBtn = document.getElementById('menu-btn');
+
+  /* What lies under each scroll. Essays can name their own photograph. */
+  var REVEALS = {
+    apple: {
+      img: 'assets/road-apple.jpg', pos: 'center 84%', fit: 'cover',
+      jp: 'お接待', line: 'Osettai. The simplest gift of the road is enough.'
+    },
+    astorga: {
+      img: 'assets/astorga.jpg', pos: 'center 62%', fit: 'hang', ambient: 'assets/astorga-ambient.jpg',
+      jp: '道中', line: 'Astorga, Spain. The road where this essay was written.'
+    }
+  };
+  Object.keys(REVEALS).forEach(function (key) { var i = new Image(); i.src = REVEALS[key].img; });
+
+  function setReveal(key) {
+    var r = REVEALS[key] || REVEALS.apple;
+    bdPhoto.style.backgroundImage = 'url("' + r.img + '")';
+    bdPhoto.style.backgroundPosition = r.pos;
+    bdAmbient.style.backgroundImage = r.ambient ? 'url("' + r.ambient + '")' : 'none';
+    bdPrint.style.backgroundImage = 'url("' + r.img + '")';
+    backdrop.setAttribute('data-fit', r.fit);
+    reveal.setAttribute('data-fit', r.fit);
+    revealJp.textContent = r.jp;
+    revealLine.textContent = r.line;
+  }
+
+  /* The dusk lifts as the bottom dowel rises off the screen. */
+  var ticking = false;
+  function updateReveal() {
+    ticking = false;
+    var vh = window.innerHeight;
+    var risen = vh - bottomDowel.getBoundingClientRect().bottom;
+    var p = Math.max(0, Math.min(1, risen / (vh * 0.6)));
+    root.style.setProperty('--reveal', p.toFixed(3));
+  }
+  function requestReveal() {
+    if (!ticking) { ticking = true; window.requestAnimationFrame(updateReveal); }
+  }
+  window.addEventListener('scroll', requestReveal, { passive: true });
+  window.addEventListener('resize', requestReveal);
+
+  /* One view per plain #name, so each page can be linked and the back button works. */
+  function routeFromHash() {
+    var name = window.location.hash.replace(/^#/, '');
+    return document.getElementById('page-' + name) ? name : 'home';
+  }
+  function show(route, isNavigation) {
+    var active = document.getElementById('page-' + route);
+    pages.forEach(function (p) { p.classList.toggle('is-active', p === active); });
+    var navKey = active.getAttribute('data-nav') || route;
+    navLinks.forEach(function (a) {
+      if (a.getAttribute('data-nav-link') === navKey) { a.setAttribute('aria-current', 'page'); }
+      else { a.removeAttribute('aria-current'); }
+    });
+    var title = active.getAttribute('data-title');
+    document.title = route === 'home' ? 'Camino Henro prototype' : title + ' | Camino Henro prototype';
+    setReveal(active.getAttribute('data-reveal'));
+    revealLink.hidden = route === 'donate';
+    setMenu(false);
+    if (isNavigation) {
+      root.classList.add('has-navigated');
+      window.scrollTo(0, 0);
+    }
+    updateReveal();
+  }
+  window.addEventListener('hashchange', function () { show(routeFromHash(), true); });
+  /* A link to the page you are already on rolls the scroll back to its top. */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
+    if (!a) { return; }
+    if (a.getAttribute('href').slice(1) === routeFromHash() && (window.location.hash || a.getAttribute('href') === '#home')) {
+      var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' });
+      setMenu(false);
+    }
+  });
+
+  /* Menu */
+  function setMenu(open) {
+    menu.hidden = !open;
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    root.classList.toggle('menu-open', open);
+  }
+  menuBtn.addEventListener('click', function () { setMenu(menu.hidden); });
+  menu.addEventListener('click', function (e) { if (e.target.closest('a')) { setMenu(false); } });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !menu.hidden) { setMenu(false); menuBtn.focus(); }
+  });
+
+  /* Share */
+  Array.prototype.forEach.call(document.querySelectorAll('.share'), function (box) {
+    var url = box.getAttribute('data-share-url');
+    var title = box.getAttribute('data-share-title');
+    var status = box.querySelector('.status');
+    var u = encodeURIComponent(url);
+    var t = encodeURIComponent(title);
+    box.querySelector('[data-share="x"]').href = 'https://twitter.com/intent/tweet?text=' + t + '&url=' + u;
+    box.querySelector('[data-share="whatsapp"]').href = 'https://wa.me/?text=' + encodeURIComponent(title + ' ' + url);
+    box.querySelector('[data-share="reddit"]').href = 'https://www.reddit.com/submit?url=' + u + '&title=' + t;
+    var copyBtn = box.querySelector('[data-copy]');
+    copyBtn.addEventListener('click', function () {
+      function done() {
+        copyBtn.textContent = 'Link copied';
+        status.textContent = url;
+        window.setTimeout(function () { copyBtn.textContent = 'Copy link'; }, 2600);
+      }
+      function byHand() { status.textContent = 'Copy this address: ' + url; }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(done, byHand);
+        } else { byHand(); }
+      } catch (err) { byHand(); }
+    });
+  });
+
+  /* Follow form and prototype-only buttons */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-follow]'), function (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var status = form.nextElementSibling;
+      status.textContent = 'Prototype: on the live site this adds your address to the list. Nothing was sent.';
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-proto-msg]'), function (btn) {
+    btn.addEventListener('click', function () {
+      btn.parentNode.querySelector('.status').textContent = btn.getAttribute('data-proto-msg');
+    });
+  });
+
+  /* Ledger totals come from the rows themselves */
+  var ledgerWrap = document.getElementById('ledger-wrap');
+  var ledgerToggle = document.getElementById('ledger-toggle');
+  var eur = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
+  function renderTotals() {
+    var empty = ledgerWrap.getAttribute('data-ledger') === 'empty';
+    var received = 0, spent = 0;
+    if (!empty) {
+      Array.prototype.forEach.call(ledgerWrap.querySelectorAll('tr[data-amt]'), function (row) {
+        var n = parseFloat(row.getAttribute('data-amt'));
+        if (n >= 0) { received += n; } else { spent -= n; }
+      });
+    }
+    document.getElementById('sum-in').textContent = eur.format(received);
+    document.getElementById('sum-out').textContent = eur.format(spent);
+    document.getElementById('sum-reserve').textContent = eur.format(received - spent);
+    ledgerToggle.previousSibling.textContent = empty ? 'Prototype view: empty ledger.' : 'Prototype view: sample entries.';
+    ledgerToggle.textContent = empty ? 'Show sample entries' : 'Show the empty ledger';
+  }
+  ledgerToggle.addEventListener('click', function () {
+    ledgerWrap.setAttribute('data-ledger', ledgerWrap.getAttribute('data-ledger') === 'empty' ? 'sample' : 'empty');
+    renderTotals();
+  });
+  renderTotals();
+
+  try { window.history.scrollRestoration = 'manual'; } catch (err) { /* not available in every frame */ }
+  show(routeFromHash(), false);
+})();
+</script>
+</body>
+</html>
