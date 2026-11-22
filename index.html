@@ -75,6 +75,29 @@ button { font: inherit; }
   transform-origin: 50% 80%;
 }
 .backdrop__ambient, .backdrop__print { display: none; }
+.backdrop__ambient { background-image: url("assets/road-apple-ambient.jpg"); background-repeat: no-repeat; }
+.backdrop__dusk { z-index: 3; }
+.backdrop__print { z-index: 4; }
+/* Wide screens: the photograph stays narrow enough for the scroll to hide the apple, and is centred on it.
+   A blurred copy carries the sky and the fields out to the edges of the screen. */
+@media (min-aspect-ratio: 1/1) {
+  .backdrop[data-fit="cover"] { --photo-w: min(107vw, 1560px); }
+  .backdrop[data-fit="cover"] .backdrop__ambient {
+    display: block;
+    background-position: center 84%;
+    background-size: 100% calc(var(--photo-w) * var(--photo-hw, 1.3333));
+  }
+  .backdrop[data-fit="cover"] .backdrop__photo {
+    z-index: 2;
+    inset: 0 auto 0 50%;
+    width: var(--photo-w);
+    margin-left: calc(var(--photo-w) * var(--focus-x, 0.529) * -1);
+    background-size: 100% auto;
+    transform-origin: 52.9% 80%;
+    -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0) 0, #000 9%, #000 91%, rgba(0, 0, 0, 0) 100%);
+    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0) 0, #000 9%, #000 91%, rgba(0, 0, 0, 0) 100%);
+  }
+}
 .backdrop__dusk {
   background: radial-gradient(circle at 50% 72%,
     rgba(8, 9, 12, calc(0.58 - 0.54 * var(--reveal))) 0%,
@@ -82,7 +105,7 @@ button { font: inherit; }
 }
 /* A portrait photo on a wide screen hangs as a print instead of being stretched */
 @media (min-aspect-ratio: 5/4) and (min-width: 900px) {
-  .backdrop[data-fit="hang"] .backdrop__ambient { display: block; background-position: center; background-size: cover; transform: scale(1.2); }
+  .backdrop[data-fit="hang"] .backdrop__ambient { z-index: 1; display: block; background-position: center; background-size: cover; transform: scale(1.2); }
   .backdrop[data-fit="hang"] .backdrop__print {
     display: block; position: absolute; left: 50%;
     top: calc(var(--header-h) + 3.5vh); bottom: 3.5vh;
@@ -814,6 +837,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; text-wrap: bala
   var REVEALS = {
     apple: {
       img: 'assets/road-apple.jpg', pos: 'center 84%', fit: 'cover',
+      ambient: 'assets/road-apple-ambient.jpg', hw: 1.3333, focusX: 0.529,
       jp: 'お接待', line: 'Osettai. The simplest gift of the road is enough.'
     },
     astorga: {
@@ -829,6 +853,8 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; text-wrap: bala
     bdPhoto.style.backgroundPosition = r.pos;
     bdAmbient.style.backgroundImage = r.ambient ? 'url("' + r.ambient + '")' : 'none';
     bdPrint.style.backgroundImage = 'url("' + r.img + '")';
+    backdrop.style.setProperty('--photo-hw', r.hw || 1.3333);
+    backdrop.style.setProperty('--focus-x', r.focusX || 0.5);
     backdrop.setAttribute('data-fit', r.fit);
     reveal.setAttribute('data-fit', r.fit);
     revealJp.textContent = r.jp;
